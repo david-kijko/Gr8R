@@ -341,6 +341,13 @@ impl App {
         };
 
         self.last_pane_click = None;
+        match self.invoke_plugin_link_handler_for_url(&url, info.id) {
+            Ok(true) => return true,
+            Ok(false) => {}
+            Err(err) => {
+                tracing::warn!(err = %err, url = %url, "failed to invoke plugin link handler");
+            }
+        }
         if let Err(err) = crate::platform::open_url(&url) {
             tracing::warn!(err = %err, url = %url, "failed to open pane URL");
         }

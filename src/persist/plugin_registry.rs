@@ -112,6 +112,7 @@ mod tests {
             actions: vec![],
             events: vec![],
             panes: vec![],
+            link_handlers: vec![],
             warnings: vec![],
         }
     }
@@ -182,6 +183,7 @@ mod tests {
                 actions: vec![],
                 events: vec![],
                 panes: vec![],
+                link_handlers: vec![],
                 warnings: vec![],
             })
         });

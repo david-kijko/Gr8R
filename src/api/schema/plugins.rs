@@ -48,6 +48,8 @@ pub struct InstalledPluginInfo {
     pub events: Vec<PluginManifestEventHook>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub panes: Vec<PluginManifestPane>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub link_handlers: Vec<PluginManifestLinkHandler>,
     /// Warnings collected at link time or on registry load (e.g. unknown event names,
     /// missing manifest file). Non-fatal — the entry is kept and surfaced by plugin.list.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -86,6 +88,16 @@ pub struct PluginManifestPane {
     #[serde(default)]
     pub placement: PluginPanePlacement,
     pub command: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginManifestLinkHandler {
+    pub id: String,
+    pub title: String,
+    pub pattern: String,
+    pub action: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub platforms: Option<Vec<PluginPlatform>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -188,6 +200,10 @@ pub struct PluginInvocationContext {
     pub invocation_source: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clicked_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link_handler_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

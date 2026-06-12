@@ -219,6 +219,8 @@ fn plugin_action_invoke(args: &[String]) -> std::io::Result<i32> {
             selected_text: None,
             invocation_source: Some("cli".into()),
             correlation_id: None,
+            clicked_url: None,
+            link_handler_id: None,
         }),
     }))
 }

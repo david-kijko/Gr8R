@@ -8,9 +8,9 @@ use crate::api::schema::{
     InstalledPluginInfo, PluginActionInfo, PluginActionInvokeParams, PluginActionListParams,
     PluginCommandLogInfo, PluginCommandStatus, PluginInvocationContext, PluginLinkParams,
     PluginListParams, PluginLogListParams, PluginManifestAction, PluginManifestEventHook,
-    PluginManifestPane, PluginPaneCloseParams, PluginPaneFocusParams, PluginPaneInfo,
-    PluginPaneOpenParams, PluginPanePlacement, PluginPlatform, PluginSetEnabledParams,
-    PluginUnlinkParams, ResponseResult,
+    PluginManifestLinkHandler, PluginManifestPane, PluginPaneCloseParams, PluginPaneFocusParams,
+    PluginPaneInfo, PluginPaneOpenParams, PluginPanePlacement, PluginPlatform,
+    PluginSetEnabledParams, PluginUnlinkParams, ResponseResult,
 };
 use crate::app::App;
 
@@ -227,6 +227,57 @@ impl App {
             None,
         )
         .map(|_| ())
+        .map_err(|(_, message)| message)
+    }
+
+    pub(crate) fn invoke_plugin_link_handler_for_url(
+        &mut self,
+        url: &str,
+        pane_id: crate::layout::PaneId,
+    ) -> Result<bool, String> {
+        let Some((plugin, handler)) = self.find_plugin_link_handler(url) else {
+            return Ok(false);
+        };
+        if ensure_platform_supported(
+            &effective_platforms(&handler.platforms, &plugin.platforms).clone(),
+            &handler.id,
+        )
+        .is_err()
+        {
+            return Ok(false);
+        }
+        let action = plugin
+            .actions
+            .iter()
+            .find(|action| action.id == handler.action)
+            .cloned()
+            .ok_or_else(|| {
+                format!(
+                    "plugin {} link handler {} references missing action {}",
+                    plugin.plugin_id, handler.id, handler.action
+                )
+            })?;
+        ensure_platform_supported(
+            &effective_platforms(&action.platforms, &plugin.platforms).clone(),
+            &action.id,
+        )
+        .map_err(|(_, message)| message)?;
+        let Some(ws_idx) = self.state.active else {
+            return Ok(false);
+        };
+        let mut context = self.plugin_context_for_pane(ws_idx, pane_id, "link_click");
+        context.invocation_source = Some("link_click".to_string());
+        context.clicked_url = Some(url.to_string());
+        context.link_handler_id = Some(handler.id);
+        self.start_plugin_command(
+            &plugin,
+            Some(action.id),
+            None,
+            action.command,
+            &context,
+            None,
+        )
+        .map(|_| true)
         .map_err(|(_, message)| message)
     }
 
@@ -694,6 +745,54 @@ impl App {
         }
     }
 
+    fn find_plugin_link_handler(
+        &self,
+        url: &str,
+    ) -> Option<(InstalledPluginInfo, PluginManifestLinkHandler)> {
+        let mut plugins = self
+            .state
+            .installed_plugins
+            .values()
+            .filter(|plugin| plugin.enabled)
+            .cloned()
+            .collect::<Vec<_>>();
+        plugins.sort_by(|a, b| a.plugin_id.cmp(&b.plugin_id));
+        for plugin in plugins {
+            for handler in &plugin.link_handlers {
+                if ensure_platform_supported(
+                    &effective_platforms(&handler.platforms, &plugin.platforms).clone(),
+                    &handler.id,
+                )
+                .is_err()
+                {
+                    continue;
+                }
+                let Some(action) = plugin
+                    .actions
+                    .iter()
+                    .find(|action| action.id == handler.action)
+                else {
+                    continue;
+                };
+                if ensure_platform_supported(
+                    &effective_platforms(&action.platforms, &plugin.platforms).clone(),
+                    &action.id,
+                )
+                .is_err()
+                {
+                    continue;
+                }
+                let Ok(regex) = regex::Regex::new(&handler.pattern) else {
+                    continue;
+                };
+                if regex.is_match(url) {
+                    return Some((plugin.clone(), handler.clone()));
+                }
+            }
+        }
+        None
+    }
+
     fn merge_plugin_context(
         &self,
         provided: Option<PluginInvocationContext>,
@@ -715,6 +814,8 @@ impl App {
             context.selected_text = provided.selected_text.or(context.selected_text);
             context.invocation_source = provided.invocation_source.or(context.invocation_source);
             context.correlation_id = provided.correlation_id.or(context.correlation_id);
+            context.clicked_url = provided.clicked_url.or(context.clicked_url);
+            context.link_handler_id = provided.link_handler_id.or(context.link_handler_id);
         }
         context
     }
@@ -802,6 +903,8 @@ impl App {
             selected_text: None,
             invocation_source: Some("api".to_string()),
             correlation_id: Some(correlation_id.to_string()),
+            clicked_url: None,
+            link_handler_id: None,
         }
     }
 
@@ -903,6 +1006,15 @@ impl App {
         }
         if let Some(pane_id) = context.focused_pane_id.as_ref() {
             env.push(("HERDR_PANE_ID".to_string(), pane_id.clone()));
+        }
+        if let Some(clicked_url) = context.clicked_url.as_ref() {
+            env.push(("HERDR_PLUGIN_CLICKED_URL".to_string(), clicked_url.clone()));
+        }
+        if let Some(link_handler_id) = context.link_handler_id.as_ref() {
+            env.push((
+                "HERDR_PLUGIN_LINK_HANDLER_ID".to_string(),
+                link_handler_id.clone(),
+            ));
         }
         let plugin_root = std::path::PathBuf::from(&plugin.plugin_root);
         let log = PluginCommandLogInfo {
@@ -1054,6 +1166,8 @@ struct RawPluginManifest {
     events: Vec<RawPluginManifestEventHook>,
     #[serde(default)]
     panes: Vec<RawPluginManifestPane>,
+    #[serde(default)]
+    link_handlers: Vec<RawPluginManifestLinkHandler>,
 }
 
 #[derive(serde::Deserialize)]
@@ -1088,6 +1202,16 @@ struct RawPluginManifestPane {
     #[serde(default)]
     placement: PluginPanePlacement,
     command: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct RawPluginManifestLinkHandler {
+    id: String,
+    title: String,
+    pattern: String,
+    action: String,
+    #[serde(default)]
+    platforms: Option<Vec<RawPlatform>>,
 }
 
 /// Raw string platform value from the manifest, validated before conversion.
@@ -1169,6 +1293,13 @@ pub(crate) fn load_plugin_manifest(
         .collect::<Result<Vec<_>, _>>()?;
     reject_duplicate_pane_ids(&panes)?;
     panes.sort_by(|a, b| a.id.cmp(&b.id));
+    let link_handlers = raw
+        .link_handlers
+        .into_iter()
+        .map(normalize_manifest_link_handler)
+        .collect::<Result<Vec<_>, _>>()?;
+    reject_duplicate_link_handler_ids(&link_handlers)?;
+    validate_link_handler_actions(&link_handlers, &actions)?;
 
     let mut warnings = validate_event_names(&events);
     if platforms.is_none() {
@@ -1187,6 +1318,7 @@ pub(crate) fn load_plugin_manifest(
         actions,
         events,
         panes,
+        link_handlers,
         warnings,
     })
 }
@@ -1222,6 +1354,39 @@ fn reject_duplicate_pane_ids(panes: &[PluginManifestPane]) -> Result<(), (&'stat
             return Err((
                 "duplicate_plugin_pane_id",
                 format!("duplicate pane id '{}'", pane.id),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn reject_duplicate_link_handler_ids(
+    handlers: &[PluginManifestLinkHandler],
+) -> Result<(), (&'static str, String)> {
+    let mut seen = std::collections::HashSet::new();
+    for handler in handlers {
+        if !seen.insert(handler.id.as_str()) {
+            return Err((
+                "duplicate_plugin_link_handler_id",
+                format!("duplicate link handler id '{}'", handler.id),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_link_handler_actions(
+    handlers: &[PluginManifestLinkHandler],
+    actions: &[PluginManifestAction],
+) -> Result<(), (&'static str, String)> {
+    for handler in handlers {
+        if !actions.iter().any(|action| action.id == handler.action) {
+            return Err((
+                "invalid_plugin_link_handler_action",
+                format!(
+                    "link handler '{}' references unknown action '{}'",
+                    handler.id, handler.action
+                ),
             ));
         }
     }
@@ -1290,6 +1455,43 @@ fn normalize_manifest_event(
         on,
         platforms,
         command,
+    })
+}
+
+fn normalize_manifest_link_handler(
+    handler: RawPluginManifestLinkHandler,
+) -> Result<PluginManifestLinkHandler, (&'static str, String)> {
+    let id = normalize_action_id(&handler.id).ok_or_else(|| {
+        (
+            "invalid_plugin_link_handler_id",
+            "invalid link handler id".to_string(),
+        )
+    })?;
+    let title = non_empty_trimmed(
+        &handler.title,
+        "invalid_plugin_link_handler_title",
+        "link handler title is required",
+    )?;
+    let pattern = non_empty_trimmed(
+        &handler.pattern,
+        "invalid_plugin_link_handler_pattern",
+        "link handler pattern is required",
+    )?;
+    regex::Regex::new(&pattern)
+        .map_err(|err| ("invalid_plugin_link_handler_pattern", err.to_string()))?;
+    let action = normalize_action_id(&handler.action).ok_or_else(|| {
+        (
+            "invalid_plugin_link_handler_action",
+            "invalid link handler action".to_string(),
+        )
+    })?;
+    let platforms = normalize_platforms(handler.platforms)?;
+    Ok(PluginManifestLinkHandler {
+        id,
+        title,
+        pattern,
+        action,
+        platforms,
     })
 }
 
@@ -1381,6 +1583,8 @@ fn empty_plugin_context(correlation_id: &str) -> PluginInvocationContext {
         selected_text: None,
         invocation_source: Some("api".to_string()),
         correlation_id: Some(correlation_id.to_string()),
+        clicked_url: None,
+        link_handler_id: None,
     }
 }
 
@@ -1569,6 +1773,12 @@ command = ["bun", "run", "bootstrap.ts"]
 id = "board"
 title = "Worktree board"
 command = ["bun", "run", "board.ts"]
+
+[[link_handlers]]
+id = "github-pr"
+title = "Open GitHub PR"
+pattern = "^https://github\\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+$"
+action = "bootstrap"
 "#,
         )
         .unwrap();
@@ -1625,6 +1835,9 @@ command = ["bun", "run", "board.ts"]
         assert_eq!(plugin.panes.len(), 1);
         assert_eq!(plugin.panes[0].id, "board");
         assert_eq!(plugin.panes[0].placement, PluginPanePlacement::Overlay);
+        assert_eq!(plugin.link_handlers.len(), 1);
+        assert_eq!(plugin.link_handlers[0].id, "github-pr");
+        assert_eq!(plugin.link_handlers[0].action, "bootstrap");
 
         let list = app.handle_api_request(Request {
             id: "list".into(),
@@ -1993,6 +2206,8 @@ command = ["sh", "-c", "sleep 1"]
                     selected_text: None,
                     invocation_source: Some("test".into()),
                     correlation_id: Some("external-correlation".into()),
+                    clicked_url: None,
+                    link_handler_id: None,
                 }),
             }),
         });
@@ -2083,6 +2298,204 @@ command = ["sh", "-c", "printf '%s' \"$HERDR_PLUGIN_ACTION_ID\""]
         assert_eq!(finished.status, PluginCommandStatus::Succeeded);
         assert_eq!(finished.stdout.as_deref(), Some("run"));
         assert_eq!(finished.exit_code, Some(0));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn plugin_link_handler_invokes_action_with_clicked_url_context() {
+        let mut app = test_app();
+        app.state.workspaces = vec![crate::workspace::Workspace::test_new("link-handler")];
+        app.state.ensure_test_terminals();
+        app.state.active = Some(0);
+        app.state.selected = 0;
+        let pane_id = app.state.workspaces[0].tabs[0].root_pane;
+        let root = unique_temp_path("plugin-link-handler");
+        write_manifest_content(
+            &root,
+            r#"
+id = "example.links"
+name = "Links"
+version = "0.1.0"
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "open"
+title = "Open link"
+command = ["sh", "-c", "printf '%s|%s' \"$HERDR_PLUGIN_LINK_HANDLER_ID\" \"$HERDR_PLUGIN_CLICKED_URL\""]
+
+[[link_handlers]]
+id = "github-issue"
+title = "Open GitHub issue"
+pattern = "^https://github\\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+$"
+action = "open"
+"#,
+        );
+        link_manifest(&mut app, &root);
+
+        let handled = app
+            .invoke_plugin_link_handler_for_url(
+                "https://github.com/ogulcancelik/herdr/issues/398",
+                pane_id,
+            )
+            .expect("link handler should invoke");
+        assert!(handled);
+        let log = app
+            .state
+            .plugin_command_logs
+            .last()
+            .expect("plugin command log should be recorded")
+            .clone();
+
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while std::time::Instant::now() < deadline {
+            app.drain_all_internal_events();
+            if app.state.plugin_command_logs.iter().any(|entry| {
+                entry.log_id == log.log_id && entry.status != PluginCommandStatus::Running
+            }) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+
+        let finished = app
+            .state
+            .plugin_command_logs
+            .iter()
+            .find(|entry| entry.log_id == log.log_id)
+            .expect("log should exist");
+        assert_eq!(finished.status, PluginCommandStatus::Succeeded);
+        assert_eq!(finished.action_id.as_deref(), Some("open"));
+        assert_eq!(
+            finished.stdout.as_deref(),
+            Some("github-issue|https://github.com/ogulcancelik/herdr/issues/398")
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn plugin_link_handlers_keep_manifest_order_for_overlapping_patterns() {
+        let mut app = test_app();
+        let root = unique_temp_path("plugin-link-handler-order");
+        write_manifest_content(
+            &root,
+            r#"
+id = "example.link-order"
+name = "Link Order"
+version = "0.1.0"
+platforms = ["linux", "macos", "windows"]
+
+[[actions]]
+id = "specific"
+title = "Specific"
+command = ["true"]
+
+[[actions]]
+id = "generic"
+title = "Generic"
+command = ["true"]
+
+[[link_handlers]]
+id = "z-specific"
+title = "Specific GitHub issue"
+pattern = "^https://github\\.com/[^/]+/[^/]+/issues/[0-9]+$"
+action = "specific"
+
+[[link_handlers]]
+id = "a-generic"
+title = "Generic GitHub"
+pattern = "^https://github\\.com/"
+action = "generic"
+"#,
+        );
+        link_manifest(&mut app, &root);
+
+        let (_plugin, handler) = app
+            .find_plugin_link_handler("https://github.com/ogulcancelik/herdr/issues/398")
+            .expect("handler should match");
+        assert_eq!(handler.id, "z-specific");
+        assert_eq!(handler.action, "specific");
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn plugin_link_rejects_invalid_link_handler_pattern() {
+        let mut app = test_app();
+        let root = unique_temp_path("plugin-bad-link-handler-pattern");
+        write_manifest_content(
+            &root,
+            r#"
+id = "example.bad-links"
+name = "Bad Links"
+version = "0.1.0"
+platforms = ["linux", "macos", "windows"]
+
+[[actions]]
+id = "open"
+title = "Open link"
+command = ["true"]
+
+[[link_handlers]]
+id = "bad"
+title = "Bad"
+pattern = "["
+action = "open"
+"#,
+        );
+
+        let response = app.handle_api_request(Request {
+            id: "link".into(),
+            method: Method::PluginLink(PluginLinkParams {
+                path: root.display().to_string(),
+                enabled: true,
+            }),
+        });
+        let value: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(
+            value["error"]["code"],
+            "invalid_plugin_link_handler_pattern"
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn plugin_link_rejects_link_handler_unknown_action() {
+        let mut app = test_app();
+        let root = unique_temp_path("plugin-bad-link-handler-action");
+        write_manifest_content(
+            &root,
+            r#"
+id = "example.bad-link-action"
+name = "Bad Link Action"
+version = "0.1.0"
+platforms = ["linux", "macos", "windows"]
+
+[[actions]]
+id = "open"
+title = "Open link"
+command = ["true"]
+
+[[link_handlers]]
+id = "github"
+title = "GitHub"
+pattern = "^https://github\\.com/"
+action = "missing"
+"#,
+        );
+
+        let response = app.handle_api_request(Request {
+            id: "link".into(),
+            method: Method::PluginLink(PluginLinkParams {
+                path: root.display().to_string(),
+                enabled: true,
+            }),
+        });
+        let value: serde_json::Value = serde_json::from_str(&response).unwrap();
+        assert_eq!(value["error"]["code"], "invalid_plugin_link_handler_action");
 
         let _ = std::fs::remove_dir_all(root);
     }

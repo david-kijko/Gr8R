@@ -710,6 +710,13 @@ fn plugin_link_list_unlink_round_trip() {
             placement: PluginPanePlacement::Overlay,
             command: vec!["bun".into(), "run".into(), "board.ts".into()],
         }],
+        link_handlers: vec![PluginManifestLinkHandler {
+            id: "github-pr".into(),
+            title: "Open GitHub PR".into(),
+            pattern: "^https://github.com/[^/]+/[^/]+/(issues|pull)/[0-9]+$".into(),
+            action: "bootstrap".into(),
+            platforms: None,
+        }],
         warnings: vec![],
     };
 

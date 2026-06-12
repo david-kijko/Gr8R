@@ -29,6 +29,12 @@ id = "board"
 title = "Project board"
 placement = "overlay"
 command = ["herdr-board"]
+
+[[link_handlers]]
+id = "github-issue"
+title = "Open GitHub issue"
+pattern = "^https://github\\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+$"
+action = "apply"
 ```
 
 Link the plugin:
@@ -71,6 +77,15 @@ description = "apply layout"
 
 Use `platforms` to declare where the plugin can run. Local plugins without
 `platforms` link with a warning; marketplace plugins will require it.
+
+Use `[[link_handlers]]` to route modified clicks on matching terminal URLs to a
+plugin action instead of opening the URL in the browser. `pattern` is a Rust
+regular expression matched against the clicked URL, and `action` must name an
+action declared by the same plugin. Link handler actions receive
+`invocation_source = "link_click"`, `clicked_url`, and `link_handler_id` in
+`HERDR_PLUGIN_CONTEXT_JSON`; shell plugins can also read
+`HERDR_PLUGIN_CLICKED_URL` and `HERDR_PLUGIN_LINK_HANDLER_ID`.
+Handlers are checked in manifest order inside each plugin.
 
 There is no Herdr-managed plugin storage API in v1. Plugins that need durable
 state should own their files or database.

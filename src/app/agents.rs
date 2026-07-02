@@ -212,20 +212,31 @@ impl App {
         Ok((agent, argv))
     }
 
-    /// Open (or refocus) a live transcript viewer pane for an externally
-    /// detected session. The external session's PTY belongs to another
-    /// terminal, so "viewing" it means following its transcript live via
+    /// Open (or refocus) a live transcript viewer for an externally detected
+    /// session. The external session's PTY belongs to another terminal, so
+    /// "viewing" it means following its transcript live via
     /// `gr8r external view`.
+    ///
+    /// The viewer opens in its own labeled tab as a plain pane — it is a
+    /// window onto an agent, not an agent, so it must not add sidebar
+    /// entries or carve the current tab into splits.
     pub(crate) fn open_external_viewer(
         &mut self,
         snapshot: crate::external::ExternalAgentSnapshot,
     ) {
+        // Refocus the existing viewer for this session if it is still open.
         if let Some(terminal_id) = self
             .external_viewer_panes
             .get(&snapshot.session_id)
             .cloned()
         {
-            if self.focus_agent_target(&terminal_id).is_ok() {
+            if let Ok(resolved) = self.resolve_terminal_target(&terminal_id) {
+                if self
+                    .state
+                    .focus_pane_in_workspace(resolved.ws_idx, resolved.pane_id)
+                {
+                    self.state.mode = Mode::Terminal;
+                }
                 return;
             }
             self.external_viewer_panes.remove(&snapshot.session_id);
@@ -234,8 +245,6 @@ impl App {
         let exe = std::env::current_exe()
             .map(|path| path.display().to_string())
             .unwrap_or_else(|_| "gr8r".to_string());
-        let short_id: String = snapshot.session_id.chars().take(8).collect();
-        let name = format!("view {} {short_id}", snapshot.cwd_label());
         let label = format!(
             "{} · {}",
             crate::detect::agent_label(snapshot.agent),
@@ -249,39 +258,60 @@ impl App {
             "--label".to_string(),
             label,
         ];
-        let params = |cwd: Option<String>| AgentStartParams {
-            name: name.clone(),
-            cwd,
-            workspace_id: None,
-            tab_id: None,
-            split: None,
-            focus: true,
-            argv: argv.clone(),
-            env: Default::default(),
-        };
-
         let cwd = snapshot
             .cwd
-            .as_ref()
+            .clone()
             .filter(|cwd| cwd.is_dir())
-            .map(|cwd| cwd.display().to_string());
-        match self.start_agent(params(cwd), Vec::new()) {
-            Ok((agent, _)) => {
-                self.external_viewer_panes
-                    .insert(snapshot.session_id, agent.terminal_id);
-                self.state.mode = Mode::Terminal;
-            }
-            Err(AgentStartError::DuplicateName { candidates, .. }) => {
-                if let Some(agent) = candidates.first() {
-                    let terminal_id = agent.terminal_id.clone();
-                    if self.focus_agent_target(&terminal_id).is_ok() {
-                        self.external_viewer_panes
-                            .insert(snapshot.session_id, terminal_id);
-                    }
+            .or_else(|| std::env::current_dir().ok())
+            .unwrap_or_else(|| PathBuf::from("/"));
+
+        let ws_idx = match self.state.active {
+            Some(ws_idx) => ws_idx,
+            None => match self.create_workspace_with_options(cwd.clone(), true) {
+                Ok(ws_idx) => {
+                    self.emit_workspace_open_events(ws_idx);
+                    ws_idx
                 }
+                Err(err) => {
+                    tracing::error!(err = %err, "failed to create workspace for external viewer");
+                    return;
+                }
+            },
+        };
+
+        let (rows, cols) = self.state.estimate_pane_size();
+        let scrollback = self.state.pane_scrollback_limit_bytes;
+        let theme = self.state.host_terminal_theme;
+        let Some(ws) = self.state.workspaces.get_mut(ws_idx) else {
+            return;
+        };
+        let (tab_idx, terminal, runtime) = match ws.create_tab_argv_command(
+            rows.max(4),
+            cols.max(10),
+            cwd,
+            &argv,
+            Vec::new(),
+            scrollback,
+            theme,
+        ) {
+            Ok(created) => created,
+            Err(err) => {
+                tracing::error!(err = %err, "failed to open external viewer tab");
+                return;
             }
-            Err(_) => {}
-        }
+        };
+        ws.tabs[tab_idx].set_custom_name(format!("view {}", snapshot.cwd_label()));
+        let root_pane = ws.tabs[tab_idx].root_pane;
+        let terminal_id = terminal.id.to_string();
+        self.terminal_runtimes.insert(terminal.id.clone(), runtime);
+        self.state.terminals.insert(terminal.id.clone(), terminal);
+        self.state.remove_alias_shadowed_by_new_pane(root_pane);
+        self.state.switch_workspace_tab(ws_idx, tab_idx);
+        self.state.mode = Mode::Terminal;
+        self.external_viewer_panes
+            .insert(snapshot.session_id, terminal_id);
+        self.schedule_session_save();
+        self.emit_tab_created_events(ws_idx, tab_idx);
     }
 
     pub(super) fn agent_start_error_body(

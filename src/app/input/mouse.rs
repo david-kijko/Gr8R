@@ -613,6 +613,13 @@ impl AppState {
                         return None;
                     }
 
+                    if let Some(snapshot) = self.external_agent_at_detail_row(mouse.row) {
+                        // No pane to focus — open a live transcript viewer
+                        // for this externally-running session.
+                        self.request_external_view = Some(snapshot);
+                        return None;
+                    }
+
                     if let Some((ws_idx, _tab_idx, pane_id)) =
                         self.agent_detail_target_at(mouse.row)
                     {

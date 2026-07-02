@@ -449,10 +449,7 @@ impl AppState {
             && row < rect.y + rect.height
     }
 
-    pub(super) fn agent_detail_target_at(
-        &self,
-        row: u16,
-    ) -> Option<(usize, usize, crate::layout::PaneId)> {
+    fn agent_detail_entry_at(&self, row: u16) -> Option<crate::ui::AgentPanelEntry> {
         if self.sidebar_collapsed {
             return None;
         }
@@ -476,7 +473,7 @@ impl AppState {
                 break;
             }
             if row == row_y || row == row_y + 1 {
-                return Some((detail.ws_idx, detail.tab_idx, detail.pane_id));
+                return Some(detail);
             }
             row_y = row_y.saturating_add(2);
             if row_y < body.y + body.height {
@@ -484,6 +481,27 @@ impl AppState {
             }
         }
         None
+    }
+
+    /// External session snapshot under the cursor in the expanded agent
+    /// panel, if the clicked entry is an externally-detected agent.
+    pub(super) fn external_agent_at_detail_row(
+        &self,
+        row: u16,
+    ) -> Option<crate::external::ExternalAgentSnapshot> {
+        self.agent_detail_entry_at(row)
+            .and_then(|detail| detail.external)
+    }
+
+    pub(super) fn agent_detail_target_at(
+        &self,
+        row: u16,
+    ) -> Option<(usize, usize, crate::layout::PaneId)> {
+        let detail = self.agent_detail_entry_at(row)?;
+        if detail.external.is_some() {
+            return None;
+        }
+        Some((detail.ws_idx, detail.tab_idx, detail.pane_id))
     }
 }
 

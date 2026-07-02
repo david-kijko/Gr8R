@@ -617,6 +617,11 @@ impl HeadlessServer {
             crate::render_prof::event("full_render_cause.deferred_onboarding");
         }
 
+        if let Some(snapshot) = self.app.state.request_external_view.take() {
+            self.app.open_external_viewer(snapshot);
+            needs_render = true;
+        }
+
         if self.app.state.request_new_workspace {
             self.app.state.request_new_workspace = false;
             let response = self.dispatch_headless_runtime_mutation(

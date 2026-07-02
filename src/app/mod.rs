@@ -116,6 +116,9 @@ pub struct App {
     pub(crate) next_api_worktree_operation_id: u64,
     pub(crate) last_sidebar_divider_click: Option<Instant>,
     pub(crate) last_pane_click: Option<PaneClickState>,
+    /// Live transcript viewer panes opened for external sessions,
+    /// keyed by session id, valued by the viewer pane's terminal id.
+    pub(crate) external_viewer_panes: HashMap<String, String>,
     pub(crate) next_resize_poll: Instant,
     pub(crate) next_animation_tick: Option<Instant>,
     pub(crate) next_auto_update_check: Option<Instant>,
@@ -594,6 +597,7 @@ impl App {
             sidebar_section_split,
             agent_panel_sort,
             external_agents: Vec::new(),
+            request_external_view: None,
             next_agent_state_change_seq: 0,
             mouse_capture: config.ui.mouse_capture,
             right_click_passthrough_modifiers: config.ui.right_click_passthrough_modifiers(),
@@ -711,6 +715,7 @@ impl App {
             next_api_worktree_operation_id: 1,
             last_sidebar_divider_click: None,
             last_pane_click: None,
+            external_viewer_panes: HashMap::new(),
             next_resize_poll: Instant::now() + RESIZE_POLL_INTERVAL,
             next_animation_tick: None,
             next_auto_update_check: version_check_enabled
@@ -892,6 +897,11 @@ impl App {
             if self.state.request_complete_onboarding {
                 self.state.request_complete_onboarding = false;
                 self.open_settings_from_onboarding();
+                needs_render = true;
+            }
+
+            if let Some(snapshot) = self.state.request_external_view.take() {
+                self.open_external_viewer(snapshot);
                 needs_render = true;
             }
 

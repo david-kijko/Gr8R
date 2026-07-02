@@ -34,6 +34,9 @@ pub(crate) struct AgentPanelEntry {
     pub last_agent_state_change_seq: Option<u64>,
     pub custom_status: Option<String>,
     pub state_labels: std::collections::HashMap<String, String>,
+    /// Set when this entry is an externally-detected session (no pane).
+    /// Focusing it opens a live transcript viewer instead of a pane switch.
+    pub external: Option<crate::external::ExternalAgentSnapshot>,
 }
 
 fn sidebar_section_heights(total_h: u16, split_ratio: f32) -> (u16, u16) {
@@ -142,6 +145,7 @@ fn agent_panel_entries_with_runtimes(
                     last_agent_state_change_seq: detail.last_agent_state_change_seq,
                     custom_status: detail.custom_status,
                     state_labels: detail.state_labels,
+                    external: None,
                 })
         })
         .collect();
@@ -162,6 +166,7 @@ fn agent_panel_entries_with_runtimes(
                 last_agent_state_change_seq: None,
                 custom_status: Some("external".to_string()),
                 state_labels: std::collections::HashMap::new(),
+                external: Some(snapshot.clone()),
             }),
     );
 
@@ -1430,6 +1435,7 @@ mod tests {
             last_agent_state_change_seq: None,
             custom_status: None,
             state_labels: std::collections::HashMap::new(),
+            external: None,
         };
 
         let label = format_agent_panel_primary_label(&entry, 18);

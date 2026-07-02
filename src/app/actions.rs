@@ -1273,6 +1273,13 @@ impl AppState {
         let Some(target) = entries.get(idx) else {
             return false;
         };
+        if let Some(snapshot) = target.external.clone() {
+            // No pane to focus — ask the App loop to open a live transcript
+            // viewer pane for this externally-running session.
+            self.request_external_view = Some(snapshot);
+            self.ensure_agent_panel_entry_visible(idx);
+            return true;
+        }
         let ws_idx = target.ws_idx;
         let pane_id = target.pane_id;
 

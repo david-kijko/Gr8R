@@ -212,6 +212,78 @@ impl App {
         Ok((agent, argv))
     }
 
+    /// Open (or refocus) a live transcript viewer pane for an externally
+    /// detected session. The external session's PTY belongs to another
+    /// terminal, so "viewing" it means following its transcript live via
+    /// `gr8r external view`.
+    pub(crate) fn open_external_viewer(
+        &mut self,
+        snapshot: crate::external::ExternalAgentSnapshot,
+    ) {
+        if let Some(terminal_id) = self
+            .external_viewer_panes
+            .get(&snapshot.session_id)
+            .cloned()
+        {
+            if self.focus_agent_target(&terminal_id).is_ok() {
+                return;
+            }
+            self.external_viewer_panes.remove(&snapshot.session_id);
+        }
+
+        let exe = std::env::current_exe()
+            .map(|path| path.display().to_string())
+            .unwrap_or_else(|_| "gr8r".to_string());
+        let short_id: String = snapshot.session_id.chars().take(8).collect();
+        let name = format!("view {} {short_id}", snapshot.cwd_label());
+        let label = format!(
+            "{} · {}",
+            crate::detect::agent_label(snapshot.agent),
+            snapshot.cwd_label()
+        );
+        let argv = vec![
+            exe,
+            "external".to_string(),
+            "view".to_string(),
+            snapshot.transcript_path.display().to_string(),
+            "--label".to_string(),
+            label,
+        ];
+        let params = |cwd: Option<String>| AgentStartParams {
+            name: name.clone(),
+            cwd,
+            workspace_id: None,
+            tab_id: None,
+            split: None,
+            focus: true,
+            argv: argv.clone(),
+            env: Default::default(),
+        };
+
+        let cwd = snapshot
+            .cwd
+            .as_ref()
+            .filter(|cwd| cwd.is_dir())
+            .map(|cwd| cwd.display().to_string());
+        match self.start_agent(params(cwd), Vec::new()) {
+            Ok((agent, _)) => {
+                self.external_viewer_panes
+                    .insert(snapshot.session_id, agent.terminal_id);
+                self.state.mode = Mode::Terminal;
+            }
+            Err(AgentStartError::DuplicateName { candidates, .. }) => {
+                if let Some(agent) = candidates.first() {
+                    let terminal_id = agent.terminal_id.clone();
+                    if self.focus_agent_target(&terminal_id).is_ok() {
+                        self.external_viewer_panes
+                            .insert(snapshot.session_id, terminal_id);
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
+
     pub(super) fn agent_start_error_body(
         &self,
         err: AgentStartError,

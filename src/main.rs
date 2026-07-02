@@ -657,6 +657,7 @@ fn main() -> io::Result<()> {
                 "wait",
                 "session",
                 "integration",
+                "external",
             ]
             .contains(&arg.as_str())
         {

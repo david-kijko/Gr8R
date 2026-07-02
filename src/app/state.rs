@@ -1356,6 +1356,9 @@ pub struct AppState {
     /// Agent sessions detected outside Gr8R panes (any terminal, any origin),
     /// discovered by the external transcript scanner.
     pub external_agents: Vec<crate::external::ExternalAgentSnapshot>,
+    /// Set when the user activates an external agent entry; the outer App
+    /// loop opens a live transcript viewer pane for it.
+    pub request_external_view: Option<crate::external::ExternalAgentSnapshot>,
     pub next_agent_state_change_seq: u64,
     /// Capture mouse input for Herdr's own mouse UI. When false, Herdr only
     /// captures mouse while the focused pane app requests mouse reporting.
@@ -1737,6 +1740,7 @@ impl AppState {
             sidebar_section_split: 0.5,
             agent_panel_sort: AgentPanelSort::Spaces,
             external_agents: Vec::new(),
+            request_external_view: None,
             next_agent_state_change_seq: 0,
             mouse_capture: true,
             right_click_passthrough_modifiers: None,

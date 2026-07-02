@@ -4819,7 +4819,7 @@ mod tests {
 
         let updates = state.handle_app_event(AppEvent::UpdateReady {
             version: "0.5.0".into(),
-            install_command: "herdr update".into(),
+            install_command: "gr8r update".into(),
         });
 
         assert!(updates.is_empty());
@@ -4831,7 +4831,7 @@ mod tests {
         assert_eq!(toast.title, "v0.5.0 available");
         assert_eq!(
             toast.context,
-            "detach, run `herdr update`, then follow its restart guidance"
+            "detach, run `gr8r update`, then follow its restart guidance"
         );
     }
 
@@ -4852,7 +4852,7 @@ mod tests {
         let toast = state.toast.as_ref().expect("update toast");
         assert_eq!(
             toast.context,
-            "detach, run `brew update && brew upgrade herdr`, then restart this Herdr session when ready"
+            "detach, run `brew update && brew upgrade herdr`, then restart this Gr8R session when ready"
         );
     }
 

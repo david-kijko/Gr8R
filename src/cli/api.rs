@@ -74,7 +74,7 @@ fn schema_summary_text() -> std::io::Result<String> {
     schemas.sort();
 
     Ok(format!(
-        "Herdr API schema\nprotocol: {}\nschema_version: {}\nschemas: {}\n\nUse `herdr api schema --json` to print the full schema.\nUse `herdr api schema --output PATH` to write it to a file.\n",
+        "Gr8R API schema\nprotocol: {}\nschema_version: {}\nschemas: {}\n\nUse `gr8r api schema --json` to print the full schema.\nUse `gr8r api schema --output PATH` to write it to a file.\n",
         protocol,
         schema_version,
         schemas.join(", ")
@@ -82,12 +82,12 @@ fn schema_summary_text() -> std::io::Result<String> {
 }
 
 fn print_api_help() {
-    eprintln!("herdr api commands:");
-    eprintln!("  herdr api schema [--json | --output PATH]");
+    eprintln!("gr8r api commands:");
+    eprintln!("  gr8r api schema [--json | --output PATH]");
 }
 
 fn print_api_schema_help() {
-    eprintln!("usage: herdr api schema [--json | --output PATH]");
+    eprintln!("usage: gr8r api schema [--json | --output PATH]");
 }
 
 #[cfg(test)]
@@ -95,8 +95,8 @@ mod tests {
     #[test]
     fn schema_summary_text_stays_human_sized() {
         let text = super::schema_summary_text().unwrap();
-        assert!(text.contains("Herdr API schema"));
-        assert!(text.contains("Use `herdr api schema --json`"));
+        assert!(text.contains("Gr8R API schema"));
+        assert!(text.contains("Use `gr8r api schema --json`"));
         assert!(text.len() < 400);
     }
 }

@@ -289,7 +289,7 @@ mod tests {
         let toast = ToastNotification {
             kind: ToastKind::NeedsAttention,
             title: "重构用户认证模块".to_string(),
-            context: "提交 herdr 的反馈".to_string(),
+            context: "提交 gr8r 的反馈".to_string(),
             position: None,
             target: None,
         };

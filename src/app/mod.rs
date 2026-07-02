@@ -663,8 +663,12 @@ impl App {
         // Background auto-update is disabled in monolithic no-session mode
         // and in debug/test builds so local development never mutates the
         // running binary out from under spawned test processes.
-        let version_check_enabled =
-            background_update_check_enabled(no_session, config.update.version_check);
+        // Fork: the version checker tracks upstream herdr releases and would
+        // prompt users to replace this build with stock herdr, so it stays
+        // off entirely; manifest updates remain enabled.
+        const UPSTREAM_VERSION_CHECK_ALLOWED: bool = false;
+        let version_check_enabled = UPSTREAM_VERSION_CHECK_ALLOWED
+            && background_update_check_enabled(no_session, config.update.version_check);
         let manifest_check_enabled =
             background_update_check_enabled(no_session, config.update.manifest_check);
         if version_check_enabled {
@@ -4064,7 +4068,7 @@ mod tests {
             app.event_tx
                 .try_send(AppEvent::UpdateReady {
                     version: format!("9.9.{i}"),
-                    install_command: "herdr update".into(),
+                    install_command: "gr8r update".into(),
                 })
                 .unwrap();
         }

@@ -26,7 +26,7 @@ fn integration_status(args: &[String]) -> std::io::Result<i32> {
         [] => false,
         [flag] if flag == "--outdated-only" => true,
         _ => {
-            eprintln!("usage: herdr integration status [--outdated-only]");
+            eprintln!("usage: gr8r integration status [--outdated-only]");
             return Ok(2);
         }
     };
@@ -103,13 +103,13 @@ fn parse_integration_target(
 ) -> std::io::Result<Option<IntegrationTarget>> {
     let Some(target) = args.first().map(|arg| arg.as_str()) else {
         eprintln!(
-            "usage: herdr integration {action} <pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|cursor>"
+            "usage: gr8r integration {action} <pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|cursor>"
         );
         return Ok(None);
     };
     if args.len() != 1 {
         eprintln!(
-            "usage: herdr integration {action} <pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|cursor>"
+            "usage: gr8r integration {action} <pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|cursor>"
         );
         return Ok(None);
     }
@@ -141,32 +141,32 @@ fn parse_integration_target(
 }
 
 fn print_integration_help() {
-    eprintln!("herdr integration commands:");
-    eprintln!("  herdr integration install pi");
-    eprintln!("  herdr integration install omp");
-    eprintln!("  herdr integration install claude");
-    eprintln!("  herdr integration install codex");
-    eprintln!("  herdr integration install copilot");
-    eprintln!("  herdr integration install devin");
-    eprintln!("  herdr integration install droid");
-    eprintln!("  herdr integration install kimi");
-    eprintln!("  herdr integration install opencode");
-    eprintln!("  herdr integration install kilo");
-    eprintln!("  herdr integration install hermes");
-    eprintln!("  herdr integration install qodercli");
-    eprintln!("  herdr integration install cursor");
-    eprintln!("  herdr integration uninstall pi");
-    eprintln!("  herdr integration uninstall omp");
-    eprintln!("  herdr integration uninstall claude");
-    eprintln!("  herdr integration uninstall codex");
-    eprintln!("  herdr integration uninstall copilot");
-    eprintln!("  herdr integration uninstall devin");
-    eprintln!("  herdr integration uninstall droid");
-    eprintln!("  herdr integration uninstall kimi");
-    eprintln!("  herdr integration uninstall opencode");
-    eprintln!("  herdr integration uninstall kilo");
-    eprintln!("  herdr integration uninstall hermes");
-    eprintln!("  herdr integration uninstall qodercli");
-    eprintln!("  herdr integration uninstall cursor");
-    eprintln!("  herdr integration status [--outdated-only]");
+    eprintln!("gr8r integration commands:");
+    eprintln!("  gr8r integration install pi");
+    eprintln!("  gr8r integration install omp");
+    eprintln!("  gr8r integration install claude");
+    eprintln!("  gr8r integration install codex");
+    eprintln!("  gr8r integration install copilot");
+    eprintln!("  gr8r integration install devin");
+    eprintln!("  gr8r integration install droid");
+    eprintln!("  gr8r integration install kimi");
+    eprintln!("  gr8r integration install opencode");
+    eprintln!("  gr8r integration install kilo");
+    eprintln!("  gr8r integration install hermes");
+    eprintln!("  gr8r integration install qodercli");
+    eprintln!("  gr8r integration install cursor");
+    eprintln!("  gr8r integration uninstall pi");
+    eprintln!("  gr8r integration uninstall omp");
+    eprintln!("  gr8r integration uninstall claude");
+    eprintln!("  gr8r integration uninstall codex");
+    eprintln!("  gr8r integration uninstall copilot");
+    eprintln!("  gr8r integration uninstall devin");
+    eprintln!("  gr8r integration uninstall droid");
+    eprintln!("  gr8r integration uninstall kimi");
+    eprintln!("  gr8r integration uninstall opencode");
+    eprintln!("  gr8r integration uninstall kilo");
+    eprintln!("  gr8r integration uninstall hermes");
+    eprintln!("  gr8r integration uninstall qodercli");
+    eprintln!("  gr8r integration uninstall cursor");
+    eprintln!("  gr8r integration status [--outdated-only]");
 }

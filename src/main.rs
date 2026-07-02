@@ -15,7 +15,7 @@ const NESTED_HERDR_MESSAGES: [&str; 6] = [
     "recursion is a pathway to many abilities some consider to be... unnatural.",
     "you were so preoccupied with whether you could, you didn't stop to think if you should. — dr. malcolm",
     "recursive herdring is disabled. somewhere, a call stack breathes a sigh of relief.",
-    "recursive descent denied. there is, in fact, such a thing as too much herdr.",
+    "recursive descent denied. there is, in fact, such a thing as too much gr8r.",
     "recursion detected. base case not found. aborting.",
 ];
 
@@ -102,8 +102,8 @@ fn init_logging() {
     crate::logging::init_file_logging("herdr.log");
 }
 
-const DEFAULT_CONFIG: &str = r##"# herdr configuration
-# Place this file at ~/.config/herdr/config.toml
+const DEFAULT_CONFIG: &str = r##"# gr8r configuration
+# Place this file at ~/.config/gr8r/config.toml
 
 # Show first-run notification setup on startup.
 # Missing also shows onboarding; set false after you've chosen.
@@ -115,7 +115,7 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 #                  vesper
 # name = "catppuccin"
 
-# Follow host terminal light/dark appearance and switch Herdr UI themes.
+# Follow host terminal light/dark appearance and switch Gr8R UI themes.
 # Existing manual behavior is unchanged unless this is true.
 # auto_switch = false
 # dark_name = "catppuccin"
@@ -140,15 +140,15 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 
 # CWD policy for new panes, tabs, and workspaces when no explicit --cwd is provided.
 # Use "follow" to inherit the source pane/workspace, "home" for $HOME,
-# "current" for Herdr's process directory, or a fixed path such as "~/Projects".
+# "current" for Gr8R's process directory, or a fixed path such as "~/Projects".
 # new_cwd = "follow"
 
 [update]
-# Update channel used by background version checks and `herdr update`.
+# Update channel used by background version checks and `gr8r update`.
 # Use "stable" for normal releases or "preview" for opt-in preview builds.
 # channel = "stable"
 
-# Check herdr.dev for new Herdr versions in the background.
+# Check herdr.dev for new Gr8R versions in the background.
 # version_check = true
 
 # Check herdr.dev for remote agent-detection manifest updates in the background.
@@ -184,7 +184,7 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 # previous_agent = ""     # optional, unset by default
 # next_agent = ""         # optional, unset by default
 # focus_agent = ""        # optional indexed binding, e.g. "prefix+alt+1..9"
-# remote_image_paste = "ctrl+v" # only active in herdr --remote; empty disables raw-key image paste
+# remote_image_paste = "ctrl+v" # only active in gr8r --remote; empty disables raw-key image paste
 # new_tab = "prefix+c"
 # rename_tab = "prefix+shift+t"
 # previous_tab = "prefix+p"
@@ -233,7 +233,7 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 # agents = ""     # e.g. "alt" makes alt+1..9 focus agent rows directly
 
 # [worktrees]
-# directory = "~/.herdr/worktrees"
+# directory = "~/.gr8r/worktrees"
 
 [ui]
 # Sidebar width (auto-scaled based on workspace names, this sets the default)
@@ -248,26 +248,26 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 # Collapsed sidebar presentation: "compact" keeps the narrow status rail, "hidden" uses zero width.
 # sidebar_collapsed_mode = "compact"
 
-# Terminal width at or below which Herdr uses the mobile single-column layout.
+# Terminal width at or below which Gr8R uses the mobile single-column layout.
 # Increase this for foldables, tablets, or wide phone terminals.
 # mobile_width_threshold = 64
 
-# Capture mouse input for Herdr's mouse UI.
+# Capture mouse input for Gr8R's mouse UI.
 # Set false to let the terminal handle normal clicks, such as Cmd-clicking URLs.
 # Pane apps like lazygit and btop can still receive mouse when they request it.
 # mouse_capture = true
 
 # Host cursor policy: "auto", "native", or "drawn".
-# "auto" draws Herdr's own cursor on Windows to avoid ConPTY cursor flicker, and uses the native terminal cursor elsewhere.
-# "native" always uses the outer terminal cursor. "drawn" always draws Herdr's cursor as terminal cell content.
+# "auto" draws Gr8R's own cursor on Windows to avoid ConPTY cursor flicker, and uses the native terminal cursor elsewhere.
+# "native" always uses the outer terminal cursor. "drawn" always draws Gr8R's cursor as terminal cell content.
 # host_cursor = "auto"
 
-# Optional modifier that forwards right-click hold/drag gestures to pane apps instead of opening Herdr's pane menu.
+# Optional modifier that forwards right-click hold/drag gestures to pane apps instead of opening Gr8R's pane menu.
 # Empty/off disables this. Shift is intentionally unsupported because terminals commonly reserve Shift+mouse.
 # right_click_passthrough_modifier = ""
 
 # Force a full redraw when the outer terminal regains focus.
-# Set false to reduce visible flashing when switching back to Herdr.
+# Set false to reduce visible flashing when switching back to Gr8R.
 # Trade-off: rare host terminal surface corruption may persist until the next full redraw.
 # redraw_on_focus_gained = true
 
@@ -305,13 +305,13 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 # Background notification popup delivery
 [ui.toast]
 # off = disable pop-up notifications
-# herdr = show in-app toasts
+# gr8r = show in-app toasts
 # terminal = ask the outer terminal to show a desktop notification
 # system = ask the OS notification service directly
 # delivery = "off"
 # delay_seconds = 1
 
-[ui.toast.herdr]
+[ui.toast.gr8r]
 # position = "bottom-right"
 
 [ui.toast.clipboard]
@@ -333,22 +333,22 @@ const DEFAULT_CONFIG: &str = r##"# herdr configuration
 
 [session]
 # Resume supported AI-agent panes into their native conversation sessions after
-# a Herdr server restart. Requires official integrations that report session refs.
+# a Gr8R server restart. Requires official integrations that report session refs.
 # resume_agents_on_restore = true
 
 [remote]
-# Whether herdr manages the ssh config used for `herdr --remote`.
-# When true (default), herdr runs remote ssh through a generated config that
+# Whether gr8r manages the ssh config used for `gr8r --remote`.
+# When true (default), gr8r runs remote ssh through a generated config that
 # includes your ~/.ssh/config first and adds ServerAliveInterval/
 # ServerAliveCountMax as fallbacks (so any keepalive values you set yourself
-# still win) to survive idle network/NAT timeouts. Herdr also uses a private
+# still win) to survive idle network/NAT timeouts. Gr8R also uses a private
 # per-attach OpenSSH control socket to reuse the first authenticated connection.
 # Set false to run plain ssh against your ssh config unchanged — this does not
-# force keepalive or multiplexing off, it only stops herdr from adding its own.
+# force keepalive or multiplexing off, it only stops gr8r from adding its own.
 # manage_ssh_config = true
 
 [experimental]
-# Allow launching herdr from inside a herdr-managed pane.
+# Allow launching gr8r from inside a gr8r-managed pane.
 # allow_nested = false
 # Experimental local Kitty graphics rendering for attached clients.
 # Requires a Kitty graphics-compatible outer terminal.
@@ -402,7 +402,7 @@ fn random_nested_message() -> &'static str {
 
 fn exit_if_nested_disabled(config: &config::Config) {
     if should_block_nested(config) {
-        eprintln!("\x1b[1merror:\x1b[0m nested herdr is disabled by default.");
+        eprintln!("\x1b[1merror:\x1b[0m nested gr8r is disabled by default.");
         eprintln!("see configuration if you want to enable it.");
         eprintln!();
         eprintln!("\x1b[2m\"{}\"\x1b[0m", random_nested_message());
@@ -416,7 +416,7 @@ fn main() -> io::Result<()> {
         Ok(args) => args,
         Err(err) => {
             eprintln!("error: {err}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'gr8r --help' for usage");
             std::process::exit(2);
         }
     };
@@ -424,7 +424,7 @@ fn main() -> io::Result<()> {
         Ok(parsed) => parsed,
         Err(err) => {
             eprintln!("error: {err}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'gr8r --help' for usage");
             std::process::exit(2);
         }
     };
@@ -439,7 +439,7 @@ fn main() -> io::Result<()> {
         })
     {
         eprintln!("error: --remote can only be used with the default launch command");
-        eprintln!("run 'herdr --help' for usage");
+        eprintln!("run 'gr8r --help' for usage");
         std::process::exit(2);
     }
 
@@ -464,6 +464,13 @@ fn main() -> io::Result<()> {
     }
 
     if args.get(1).map(|s| s.as_str()) == Some("update") {
+        // Gr8R is a fork; `update` would fetch upstream herdr binaries and
+        // replace this build, silently losing universal session detection.
+        eprintln!("gr8r: self-update is disabled in this fork.");
+        eprintln!("Update by rebuilding from https://github.com/david-kijko/Gr8R:");
+        eprintln!("  git pull && cargo build --release");
+        std::process::exit(1);
+        #[allow(unreachable_code)]
         let options = match update::parse_self_update_args(&args[2..]) {
             Ok(options) => options,
             Err(err) if err.starts_with("usage:") => {
@@ -472,7 +479,7 @@ fn main() -> io::Result<()> {
             }
             Err(err) => {
                 eprintln!("{err}");
-                eprintln!("usage: herdr update [--handoff]");
+                eprintln!("usage: gr8r update [--handoff]");
                 std::process::exit(2);
             }
         };
@@ -490,95 +497,95 @@ fn main() -> io::Result<()> {
     }
 
     if args.iter().any(|a| a == "--help" || a == "-h") {
-        println!("herdr — terminal workspace manager for AI coding agents");
+        println!("gr8r — terminal workspace manager for AI coding agents");
         println!();
-        println!("Usage: herdr [options]");
-        println!("       herdr --session <name> [options]");
-        println!("       herdr --remote <ssh-target> [--session <name>]");
-        println!("       herdr session attach <name>");
-        println!("       herdr completion zsh");
-        println!("       herdr update [--handoff]");
-        println!("       herdr channel set <stable|preview>");
-        println!("       herdr server stop");
-        println!("       herdr server reload-config");
-        println!("       herdr api <subcommand> ...");
-        println!("       herdr completion <shell>");
-        println!("       herdr config <subcommand> ...");
-        println!("       herdr channel <subcommand> ...");
-        println!("       herdr workspace <subcommand> ...");
-        println!("       herdr worktree <subcommand> ...");
-        println!("       herdr tab <subcommand> ...");
-        println!("       herdr notification <subcommand> ...");
-        println!("       herdr agent <subcommand> ...");
-        println!("       herdr pane <subcommand> ...");
-        println!("       herdr wait <subcommand> ...");
-        println!("       herdr session <subcommand> ...");
-        println!("       herdr integration <subcommand> ...");
+        println!("Usage: gr8r [options]");
+        println!("       gr8r --session <name> [options]");
+        println!("       gr8r --remote <ssh-target> [--session <name>]");
+        println!("       gr8r session attach <name>");
+        println!("       gr8r completion zsh");
+        println!("       gr8r update [--handoff]");
+        println!("       gr8r channel set <stable|preview>");
+        println!("       gr8r server stop");
+        println!("       gr8r server reload-config");
+        println!("       gr8r api <subcommand> ...");
+        println!("       gr8r completion <shell>");
+        println!("       gr8r config <subcommand> ...");
+        println!("       gr8r channel <subcommand> ...");
+        println!("       gr8r workspace <subcommand> ...");
+        println!("       gr8r worktree <subcommand> ...");
+        println!("       gr8r tab <subcommand> ...");
+        println!("       gr8r notification <subcommand> ...");
+        println!("       gr8r agent <subcommand> ...");
+        println!("       gr8r pane <subcommand> ...");
+        println!("       gr8r wait <subcommand> ...");
+        println!("       gr8r session <subcommand> ...");
+        println!("       gr8r integration <subcommand> ...");
         println!();
         println!("Common commands:");
         for (command, description) in [
-            ("herdr", "Launch or attach to the persistent session"),
+            ("gr8r", "Launch or attach to the persistent session"),
             (
-                "herdr status [server|client]",
+                "gr8r status [server|client]",
                 "Show local client and running server status",
             ),
-            ("herdr update", "Download and install the latest version"),
-            ("herdr completion zsh", "Generate shell completions for zsh"),
+            ("gr8r update", "Download and install the latest version"),
+            ("gr8r completion zsh", "Generate shell completions for zsh"),
             (
-                "herdr server stop",
+                "gr8r server stop",
                 "Stop the running server via the API socket",
             ),
             (
-                "herdr channel set <stable|preview>",
+                "gr8r channel set <stable|preview>",
                 "Choose the stable or preview update channel",
             ),
             (
-                "herdr server reload-config",
+                "gr8r server reload-config",
                 "Reload config.toml in the running server",
             ),
             (
-                "herdr config reset-keys",
+                "gr8r config reset-keys",
                 "Back up config.toml and remove custom keybindings",
             ),
             (
-                "herdr channel <subcommand>",
+                "gr8r channel <subcommand>",
                 "Manage the stable or preview update channel",
             ),
             (
-                "herdr api <subcommand>",
+                "gr8r api <subcommand>",
                 "Inspect the bundled socket API schema",
             ),
             (
-                "herdr workspace <subcommand>",
+                "gr8r workspace <subcommand>",
                 "Workspace helpers over the socket API",
             ),
             (
-                "herdr worktree <subcommand>",
+                "gr8r worktree <subcommand>",
                 "Git worktree helpers over the socket API",
             ),
-            ("herdr tab <subcommand>", "Tab helpers over the socket API"),
+            ("gr8r tab <subcommand>", "Tab helpers over the socket API"),
             (
-                "herdr notification <subcommand>",
+                "gr8r notification <subcommand>",
                 "Notification helpers over the socket API",
             ),
             (
-                "herdr agent <subcommand>",
+                "gr8r agent <subcommand>",
                 "Agent/terminal helpers over the socket API",
             ),
             (
-                "herdr pane <subcommand>",
+                "gr8r pane <subcommand>",
                 "Pane control helpers over the socket API",
             ),
             (
-                "herdr wait <subcommand>",
+                "gr8r wait <subcommand>",
                 "Blocking wait helpers over the socket API",
             ),
             (
-                "herdr session <subcommand>",
+                "gr8r session <subcommand>",
                 "Manage named persistent sessions",
             ),
             (
-                "herdr integration <subcommand>",
+                "gr8r integration <subcommand>",
                 "Manage built-in agent integrations",
             ),
         ] {
@@ -586,12 +593,12 @@ fn main() -> io::Result<()> {
         }
         println!();
         println!("Advanced commands:");
-        println!("  {:<32} Run as headless server", "herdr server");
+        println!("  {:<32} Run as headless server", "gr8r server");
         println!();
         println!("Options:");
         println!("  --no-session        Run monolithically (no server/client, escape hatch)");
         println!("  --session <name>    Use or create a named persistent session");
-        println!("  --remote <target>   Attach through SSH to a remote Herdr server");
+        println!("  --remote <target>   Attach through SSH to a remote Gr8R server");
         println!("  --remote-keybindings <local|server>");
         println!("                      Keybindings for --remote app attach (default: local)");
         println!("  --handoff           Opt into live handoff for update or remote attach");
@@ -607,7 +614,7 @@ fn main() -> io::Result<()> {
     }
 
     if args.iter().any(|a| a == "--version" || a == "-V") {
-        println!("herdr {}", crate::build_info::version());
+        println!("gr8r {}", crate::build_info::version());
         return Ok(());
     }
 
@@ -632,7 +639,7 @@ fn main() -> io::Result<()> {
         let arg_name = arg.split_once('=').map(|(name, _)| name).unwrap_or(arg);
         if arg.starts_with('-') && !known_flags.contains(&arg_name) {
             eprintln!("unknown option: {arg}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'gr8r --help' for usage");
             std::process::exit(1);
         }
         if !arg.starts_with('-')
@@ -654,7 +661,7 @@ fn main() -> io::Result<()> {
             .contains(&arg.as_str())
         {
             eprintln!("unknown command: {arg}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'gr8r --help' for usage");
             std::process::exit(1);
         }
     }
@@ -688,7 +695,7 @@ fn main() -> io::Result<()> {
     let _api_server = match api::start_server_with_capabilities(api_tx, event_hub.clone(), None) {
         Ok(server) => server,
         Err(err) if err.kind() == io::ErrorKind::AddrInUse => {
-            eprintln!("error: herdr is already running");
+            eprintln!("error: gr8r is already running");
             eprintln!("socket: {}", api::socket_path().display());
             std::process::exit(1);
         }

@@ -368,7 +368,7 @@ pub(super) fn render_remove_worktree_overlay(app: &AppState, frame: &mut Frame, 
         rows[2],
     );
     frame.render_widget(
-        Paragraph::new(" The branch is not deleted. The Herdr workspace will close.")
+        Paragraph::new(" The branch is not deleted. The Gr8R workspace will close.")
             .style(Style::default().fg(app.palette.overlay0)),
         rows[3],
     );
@@ -770,17 +770,17 @@ mod tests {
         let mut parent = Workspace::test_new("main");
         parent.worktree_space = Some(crate::workspace::WorktreeSpaceMembership {
             key: "repo-key".into(),
-            label: "herdr".into(),
-            repo_root: "/repo/herdr".into(),
-            checkout_path: "/repo/herdr".into(),
+            label: "gr8r".into(),
+            repo_root: "/repo/gr8r".into(),
+            checkout_path: "/repo/gr8r".into(),
             is_linked_worktree: false,
         });
         let mut child = Workspace::test_new("issue");
         child.worktree_space = Some(crate::workspace::WorktreeSpaceMembership {
             key: "repo-key".into(),
-            label: "herdr".into(),
-            repo_root: "/repo/herdr".into(),
-            checkout_path: "/repo/herdr-issue".into(),
+            label: "gr8r".into(),
+            repo_root: "/repo/gr8r".into(),
+            checkout_path: "/repo/gr8r-issue".into(),
             is_linked_worktree: true,
         });
         app.workspaces = vec![parent, child];
@@ -798,13 +798,13 @@ mod tests {
         app.name_input = "foo".into();
         app.worktree_create = Some(WorktreeCreateState {
             source_workspace_id: "source".into(),
-            source_checkout_path: "/repo/herdr".into(),
+            source_checkout_path: "/repo/gr8r".into(),
             source_existing_membership: None,
-            source_repo_root: "/repo/herdr".into(),
+            source_repo_root: "/repo/gr8r".into(),
             repo_key: "repo-key".into(),
-            repo_name: "herdr".into(),
+            repo_name: "gr8r".into(),
             branch: "foo".into(),
-            checkout_path: "/repo/.worktrees/herdr/foo".into(),
+            checkout_path: "/repo/.worktrees/gr8r/foo".into(),
             error: Some(
                 "Preparing worktree (new branch 'foo')\nfatal: a branch named 'foo' already exists"
                     .into(),

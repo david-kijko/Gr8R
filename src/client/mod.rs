@@ -79,7 +79,7 @@ struct ClientState {
     /// Rows scrolled for one direct-attach wheel notch.
     #[cfg(unix)]
     mouse_scroll_lines: usize,
-    /// Local-client shortcut that sends a clipboard image to a remote Herdr session.
+    /// Local-client shortcut that sends a clipboard image to a remote Gr8R session.
     #[cfg(unix)]
     remote_image_paste_key: Option<(crossterm::event::KeyCode, crossterm::event::KeyModifiers)>,
     /// Whether outer focus gain should force a full host-terminal redraw.
@@ -247,10 +247,7 @@ impl std::fmt::Display for ClientError {
             ClientError::ConnectionFailed(err) => {
                 write!(f, "failed to connect to server: {err}")?;
                 let path = client_socket_path();
-                write!(
-                    f,
-                    "\nIs herdr server running? Start it with `herdr server`."
-                )?;
+                write!(f, "\nIs gr8r server running? Start it with `gr8r server`.")?;
                 write!(f, "\nSocket path: {}", path.display())
             }
             ClientError::HandshakeRejected { version, error } => {
@@ -285,7 +282,7 @@ impl std::fmt::Display for ClientError {
             ClientError::ConnectionLost(err) => {
                 if let Ok(reattach_command) = std::env::var(crate::remote::REATTACH_COMMAND_ENV_VAR)
                 {
-                    write!(f, "lost connection to remote Herdr: {err}")?;
+                    write!(f, "lost connection to remote Gr8R: {err}")?;
                     write!(f, "\nIf the remote server survived the SSH or network drop, its panes may still be running.")?;
                     write!(f, "\nRun `{reattach_command}` to reattach")
                 } else {
@@ -655,7 +652,7 @@ fn is_remote_client_process() -> bool {
 /// Time to wait for the server's Welcome reply during the handshake.
 ///
 /// A local client talks to an already-connected server, so 5s is plenty. The
-/// remote bridge client (`herdr --remote`) sits behind a fresh per-attach ssh
+/// remote bridge client (`gr8r --remote`) sits behind a fresh per-attach ssh
 /// connection whose cold-connect (TCP + key exchange + auth) happens inside this
 /// window; on a high-latency link that easily exceeds 5s, so it gets a far
 /// larger budget. See issue #753.
@@ -1782,7 +1779,7 @@ fn forward_clipboard(data: &str) {
 }
 
 fn window_title_osc(title: Option<&str>) -> Vec<u8> {
-    let title = title.unwrap_or("herdr");
+    let title = title.unwrap_or("gr8r");
     let safe_title = title
         .chars()
         .filter(|ch| !matches!(*ch, '\u{1b}' | '\u{7}' | '\u{9c}'))
@@ -2335,7 +2332,7 @@ mod tests {
             "should mention connection failure: {msg}"
         );
         assert!(
-            msg.contains("herdr server"),
+            msg.contains("gr8r server"),
             "should suggest starting server: {msg}"
         );
     }
@@ -2389,7 +2386,7 @@ mod tests {
         };
         let msg = err.to_string();
         assert!(
-            msg.contains("Run `herdr` to reattach"),
+            msg.contains("Run `gr8r` to reattach"),
             "should suggest default reattach command: {msg}"
         );
     }
@@ -2404,7 +2401,7 @@ mod tests {
         };
         let msg = err.to_string();
         assert!(
-            msg.contains("Run `herdr session attach work` to reattach"),
+            msg.contains("Run `gr8r session attach work` to reattach"),
             "should suggest named session reattach command: {msg}"
         );
     }
@@ -2414,7 +2411,7 @@ mod tests {
         let _guard = env_lock().lock().unwrap();
         let _remote_env = EnvVarGuard::set(
             crate::remote::REATTACH_COMMAND_ENV_VAR,
-            "herdr --remote host --session work",
+            "gr8r --remote host --session work",
         );
         let _session_env = EnvVarGuard::set(crate::session::SESSION_ENV_VAR, "work");
         let err = ClientError::ServerShutdown {
@@ -2422,7 +2419,7 @@ mod tests {
         };
         let msg = err.to_string();
         assert!(
-            msg.contains("Run `herdr --remote host --session work` to reattach"),
+            msg.contains("Run `gr8r --remote host --session work` to reattach"),
             "should prefer remote reattach command: {msg}"
         );
     }
@@ -2445,13 +2442,13 @@ mod tests {
         let _guard = env_lock().lock().unwrap();
         let _remote_env = EnvVarGuard::set(
             crate::remote::REATTACH_COMMAND_ENV_VAR,
-            "herdr --remote host --session work",
+            "gr8r --remote host --session work",
         );
         let err =
             ClientError::ConnectionLost(io::Error::new(io::ErrorKind::BrokenPipe, "broken pipe"));
         let msg = err.to_string();
         assert!(
-            msg.contains("lost connection to remote Herdr"),
+            msg.contains("lost connection to remote Gr8R"),
             "should mention remote connection loss: {msg}"
         );
         assert!(
@@ -2459,7 +2456,7 @@ mod tests {
             "should explain possible persistence: {msg}"
         );
         assert!(
-            msg.contains("Run `herdr --remote host --session work` to reattach"),
+            msg.contains("Run `gr8r --remote host --session work` to reattach"),
             "should show remote reattach command: {msg}"
         );
     }
@@ -2681,9 +2678,9 @@ mod tests {
     #[test]
     fn window_title_osc_strips_terminators_and_defaults_to_herdr() {
         assert_eq!(
-            window_title_osc(Some("herdr\x1b api\u{7}\u{9c}")),
-            b"\x1b]0;herdr api\x07"
+            window_title_osc(Some("gr8r\x1b api\u{7}\u{9c}")),
+            b"\x1b]0;gr8r api\x07"
         );
-        assert_eq!(window_title_osc(None), b"\x1b]0;herdr\x07");
+        assert_eq!(window_title_osc(None), b"\x1b]0;gr8r\x07");
     }
 }

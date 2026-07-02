@@ -56,7 +56,7 @@ fn worktree_list(args: &[String]) -> std::io::Result<i32> {
         }
     }
     if workspace_id.is_some() && cwd.is_some() {
-        eprintln!("usage: herdr worktree list [--workspace ID | --cwd PATH] [--json]");
+        eprintln!("usage: gr8r worktree list [--workspace ID | --cwd PATH] [--json]");
         return Ok(2);
     }
 
@@ -143,7 +143,7 @@ fn worktree_create(args: &[String]) -> std::io::Result<i32> {
     }
     if workspace_id.is_some() && cwd.is_some() {
         eprintln!(
-            "usage: herdr worktree create [--workspace ID | --cwd PATH] [--branch NAME] [--base REF] [--path PATH] [--label TEXT] [--focus] [--no-focus] [--json]"
+            "usage: gr8r worktree create [--workspace ID | --cwd PATH] [--branch NAME] [--base REF] [--path PATH] [--label TEXT] [--focus] [--no-focus] [--json]"
         );
         return Ok(2);
     }
@@ -230,13 +230,13 @@ fn worktree_open(args: &[String]) -> std::io::Result<i32> {
     }
     if workspace_id.is_some() && cwd.is_some() {
         eprintln!(
-            "usage: herdr worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
+            "usage: gr8r worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
         );
         return Ok(2);
     }
     if path.is_some() == branch.is_some() {
         eprintln!(
-            "usage: herdr worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
+            "usage: gr8r worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
         );
         return Ok(2);
     }
@@ -282,7 +282,7 @@ fn worktree_remove(args: &[String]) -> std::io::Result<i32> {
     }
 
     let Some(workspace_id) = workspace_id else {
-        eprintln!("usage: herdr worktree remove --workspace ID [--force] [--json]");
+        eprintln!("usage: gr8r worktree remove --workspace ID [--force] [--json]");
         return Ok(2);
     };
 
@@ -296,15 +296,15 @@ fn worktree_remove(args: &[String]) -> std::io::Result<i32> {
 }
 
 fn print_worktree_help() {
-    eprintln!("herdr worktree commands:");
-    eprintln!("  herdr worktree list [--workspace ID | --cwd PATH] [--json]");
+    eprintln!("gr8r worktree commands:");
+    eprintln!("  gr8r worktree list [--workspace ID | --cwd PATH] [--json]");
     eprintln!(
-        "  herdr worktree create [--workspace ID | --cwd PATH] [--branch NAME] [--base REF] [--path PATH] [--label TEXT] [--focus] [--no-focus] [--json]"
+        "  gr8r worktree create [--workspace ID | --cwd PATH] [--branch NAME] [--base REF] [--path PATH] [--label TEXT] [--focus] [--no-focus] [--json]"
     );
     eprintln!(
-        "  herdr worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
+        "  gr8r worktree open [--workspace ID | --cwd PATH] (--path PATH | --branch NAME) [--label TEXT] [--focus] [--no-focus] [--json]"
     );
-    eprintln!("  herdr worktree remove --workspace ID [--force] [--json]");
+    eprintln!("  gr8r worktree remove --workspace ID [--force] [--json]");
 }
 
 fn normalize_path_arg(value: &str) -> std::io::Result<String> {

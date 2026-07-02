@@ -1,5 +1,27 @@
-# herdr
+# Gr8R
 
+**Gr8R** is a fork of [herdr](https://github.com/ogulcancelik/herdr) that adds **universal agent session detection**: Claude Code and Codex sessions show up in the agents sidebar and in `gr8r agent list` *no matter where they were started* — a plain terminal, tmux, VS Code, SSH, a cron job. Stock herdr only tracks agents spawned inside its own panes.
+
+## How universal detection works
+
+Both CLIs journal every turn to transcript files on disk regardless of how they were launched:
+
+- Claude Code: `~/.claude/projects/<encoded-cwd>/<session-uuid>.jsonl`
+- Codex: `~/.codex/sessions/<yyyy>/<mm>/<dd>/rollout-*.jsonl`
+
+A background scanner in the Gr8R server tails these trees every 2 seconds and derives each live session's state from transcript structure plus write recency:
+
+- **working** — the turn is in flight (user prompt or tool result was just written, or a tool call is executing)
+- **blocked** — a tool call has been pending with no writes for 10s+ (permission prompt or long-running tool), or Codex wrote an `*approval_request` event
+- **idle** — the last transcript entry is a text-only assistant message (turn complete), Codex wrote `task_complete`/`turn_aborted`, or the session went quiet for 5 minutes
+
+Sessions with no writes for 10 minutes drop off the list. Sessions already running inside a Gr8R pane are deduplicated by session id, so nothing shows up twice. External sessions appear in the sidebar tagged `external` (they can't be focused — their terminal lives elsewhere) and in the `agent.list` socket API with `workspace_id`/`tab_id`/`pane_id` set to `"external"`.
+
+Opt out (or force on in debug builds) with `GR8R_EXTERNAL_AGENTS=0` / `=1`.
+
+Everything below is inherited from upstream herdr — the binary here is named `gr8r`, is config- and socket-compatible with herdr, and works with the same integrations and skill.
+
+---
 
 <p align="center">
   <img src="assets/logo.png" alt="herdr" width="100" />

@@ -17,6 +17,11 @@ use crate::terminal::TerminalRuntimeRegistry;
 const WORKSPACE_SECTION_HEADER_ROWS: u16 = 2;
 const AGENT_PANEL_HEADER_ROWS: u16 = 3;
 
+/// Sentinel workspace/tab index marking an entry that has no Gr8R pane
+/// (an externally-detected agent session). All pane lookups with this index
+/// fail gracefully, so focus/click actions on such entries are no-ops.
+pub(crate) const EXTERNAL_ENTRY_IDX: usize = usize::MAX;
+
 pub(crate) struct AgentPanelEntry {
     pub ws_idx: usize,
     pub tab_idx: usize,
@@ -140,6 +145,25 @@ fn agent_panel_entries_with_runtimes(
                 })
         })
         .collect();
+
+    entries.extend(
+        app.external_agents_deduped()
+            .into_iter()
+            .map(|snapshot| AgentPanelEntry {
+                ws_idx: EXTERNAL_ENTRY_IDX,
+                tab_idx: EXTERNAL_ENTRY_IDX,
+                pane_id: crate::layout::PaneId::from_raw(u32::MAX),
+                primary_label: snapshot.cwd_label(),
+                primary_tab_label: None,
+                agent_label: Some(crate::detect::agent_label(snapshot.agent).to_string()),
+                state: snapshot.state,
+                // External sessions never demand "done" attention styling.
+                seen: true,
+                last_agent_state_change_seq: None,
+                custom_status: Some("external".to_string()),
+                state_labels: std::collections::HashMap::new(),
+            }),
+    );
 
     if matches!(app.agent_panel_sort, AgentPanelSort::Priority) {
         entries.sort_by_key(|entry| {

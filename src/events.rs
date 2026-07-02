@@ -150,6 +150,11 @@ pub enum AppEvent {
         stderr: String,
         error: Option<String>,
     },
+    /// The external session scanner produced a changed snapshot of agent
+    /// sessions running outside Gr8R panes.
+    ExternalAgentsUpdated {
+        agents: Vec<crate::external::ExternalAgentSnapshot>,
+    },
     /// Background `git worktree add` completed.
     WorktreeAddFinished(Box<WorktreeAddResult>),
     /// Background `git worktree remove` completed.

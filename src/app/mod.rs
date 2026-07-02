@@ -593,6 +593,7 @@ impl App {
             sidebar_collapsed_mode: config.ui.sidebar_collapsed_mode,
             sidebar_section_split,
             agent_panel_sort,
+            external_agents: Vec::new(),
             next_agent_state_change_seq: 0,
             mouse_capture: config.ui.mouse_capture,
             right_click_passthrough_modifiers: config.ui.right_click_passthrough_modifiers(),
@@ -675,6 +676,9 @@ impl App {
             std::thread::spawn(move || {
                 crate::detect::manifest_update::auto_update(manifest_update_tx)
             });
+        }
+        if crate::external::external_detection_enabled() {
+            crate::external::spawn_scanner(event_tx.clone());
         }
 
         let last_focus = state.active.and_then(|idx| {

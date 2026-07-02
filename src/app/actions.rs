@@ -2386,6 +2386,10 @@ impl AppState {
                 }
                 Vec::new()
             }
+            AppEvent::ExternalAgentsUpdated { agents } => {
+                self.external_agents = agents;
+                Vec::new()
+            }
             AppEvent::StateChanged {
                 pane_id,
                 agent,

@@ -1353,6 +1353,9 @@ pub struct AppState {
     /// Ratio of sidebar height allocated to the workspaces section.
     pub sidebar_section_split: f32,
     pub agent_panel_sort: AgentPanelSort,
+    /// Agent sessions detected outside Gr8R panes (any terminal, any origin),
+    /// discovered by the external transcript scanner.
+    pub external_agents: Vec<crate::external::ExternalAgentSnapshot>,
     pub next_agent_state_change_seq: u64,
     /// Capture mouse input for Herdr's own mouse UI. When false, Herdr only
     /// captures mouse while the focused pane app requests mouse reporting.
@@ -1437,6 +1440,26 @@ pub struct AppState {
 impl AppState {
     pub(crate) fn mark_session_dirty(&mut self) {
         self.session_dirty = true;
+    }
+
+    /// External agent sessions minus the ones already represented by a Gr8R
+    /// pane. A session running inside a pane reports its session id through
+    /// the integration hooks; matching ids means the pane entry already
+    /// covers it and the external entry would be a duplicate.
+    pub(crate) fn external_agents_deduped(&self) -> Vec<&crate::external::ExternalAgentSnapshot> {
+        if self.external_agents.is_empty() {
+            return Vec::new();
+        }
+        let pane_session_ids: std::collections::HashSet<&str> = self
+            .terminals
+            .values()
+            .filter_map(|terminal| terminal.persisted_agent_session.as_ref())
+            .map(|session| session.session_ref.value.as_str())
+            .collect();
+        self.external_agents
+            .iter()
+            .filter(|agent| !pane_session_ids.contains(agent.session_id.as_str()))
+            .collect()
     }
 
     pub(crate) fn remove_alias_shadowed_by_new_pane(&mut self, pane_id: PaneId) {
@@ -1713,6 +1736,7 @@ impl AppState {
             sidebar_collapsed_mode: crate::config::SidebarCollapsedModeConfig::Compact,
             sidebar_section_split: 0.5,
             agent_panel_sort: AgentPanelSort::Spaces,
+            external_agents: Vec::new(),
             next_agent_state_change_seq: 0,
             mouse_capture: true,
             right_click_passthrough_modifiers: None,

@@ -3,9 +3,9 @@ name = "herdr"
 version = "0.7.1"
 edition = "2021"
 build = "build.rs"
-description = "terminal workspace manager for AI coding agents"
+description = "Gr8R — terminal workspace manager for AI coding agents, with universal external session detection (fork of herdr)"
 license = "AGPL-3.0-or-later"
-repository = "https://github.com/ogulcancelik/herdr"
+repository = "https://github.com/david-kijko/Gr8R"
 homepage = "https://herdr.dev"
 keywords = ["terminal", "tui", "ai", "agents", "multiplexer"]
 categories = ["command-line-utilities"]
@@ -41,6 +41,21 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 unicode-width = "0.2"
 schemars = { version = "1.2.1", features = ["derive"] }
+
+# The package keeps the upstream crate name for merge-friendliness and the
+# upstream `herdr` bin for the integration-test harness; `gr8r` is the same
+# binary under the fork's name. It shares herdr's config, socket, and
+# integration-hook protocol, so it is a drop-in replacement.
+[[bin]]
+name = "herdr"
+path = "src/main.rs"
+
+[[bin]]
+name = "gr8r"
+path = "src/main.rs"
+
+[dev-dependencies]
+tempfile = "3"
 
 [patch.crates-io]
 portable-pty = { path = "vendor/portable-pty" }

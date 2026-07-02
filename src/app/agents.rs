@@ -5,7 +5,8 @@ use crate::api::schema::{AgentStartParams, SplitDirection};
 
 impl App {
     pub(super) fn collect_agent_infos(&self) -> Vec<crate::api::schema::AgentInfo> {
-        self.state
+        let mut agents: Vec<_> = self
+            .state
             .workspaces
             .iter()
             .enumerate()
@@ -17,7 +18,14 @@ impl App {
                         .filter_map(move |pane_id| self.agent_info(ws_idx, pane_id))
                 })
             })
-            .collect()
+            .collect();
+        agents.extend(
+            self.state
+                .external_agents_deduped()
+                .into_iter()
+                .map(external_agent_info),
+        );
+        agents
     }
 
     pub(super) fn agent_info_for_target(
@@ -448,6 +456,43 @@ impl App {
                 agent.name.as_deref() == Some(name) && agent.terminal_id != except_terminal_id
             })
             .collect()
+    }
+}
+
+/// Public id namespace for externally-detected sessions. These have no pane,
+/// tab, or workspace; the placeholder ids keep the schema shape stable.
+pub(super) const EXTERNAL_AGENT_SCOPE: &str = "external";
+
+fn external_agent_info(
+    snapshot: &crate::external::ExternalAgentSnapshot,
+) -> crate::api::schema::AgentInfo {
+    let agent = crate::detect::agent_label(snapshot.agent).to_string();
+    crate::api::schema::AgentInfo {
+        terminal_id: format!("{EXTERNAL_AGENT_SCOPE}:{}", snapshot.session_id),
+        name: Some(snapshot.cwd_label()),
+        agent: Some(agent.clone()),
+        title: None,
+        display_agent: None,
+        agent_status: super::api_helpers::pane_agent_status(snapshot.state, true),
+        screen_detection_skipped: false,
+        custom_status: Some(EXTERNAL_AGENT_SCOPE.to_string()),
+        state_labels: std::collections::HashMap::new(),
+        agent_session: Some(crate::api::schema::AgentSessionInfo {
+            source: "gr8r:external".to_string(),
+            agent,
+            kind: crate::agent_resume::AgentSessionRefKind::Id,
+            value: snapshot.session_id.clone(),
+        }),
+        workspace_id: EXTERNAL_AGENT_SCOPE.to_string(),
+        tab_id: EXTERNAL_AGENT_SCOPE.to_string(),
+        pane_id: EXTERNAL_AGENT_SCOPE.to_string(),
+        focused: false,
+        cwd: snapshot
+            .cwd
+            .as_ref()
+            .map(|cwd| cwd.to_string_lossy().into_owned()),
+        foreground_cwd: None,
+        revision: 0,
     }
 }
 
